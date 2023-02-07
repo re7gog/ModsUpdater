@@ -1,0 +1,15 @@
+# Don't forget to rename it to settings.toml!
+game_ver = "1.7.10"
+mods_path = "mods/"
+
+[curseforge]
+key = "YOUR_API_KEY"
+mods_ids = [288988, 288989, 238770, 263420, 317780]
+
+[github]
+use_prereleases = false
+repos = [
+    # Author/name, Should pre-release versions be used?
+    ["HbmMods/Hbm-s-Nuclear-Tech-GIT", false],
+    ["MightyPirates/OpenComputers", true]
+]
