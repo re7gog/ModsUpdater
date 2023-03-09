@@ -24,7 +24,7 @@ class Updater:
     @staticmethod
     def _downloader(args):
         file_stream = get(args[0], stream=True)
-        with open(args[1], 'wb') as file:
+        with open(args[1], 'wb+') as file:
             for chunk in file_stream.iter_content(1024):
                 file.write(chunk)
 
@@ -100,6 +100,8 @@ class GithubUpdater(Updater):
 if __name__ == '__main__':
     with open("settings.toml") as sett_file:
         sett = tomllib.loads(sett_file.read())
+    if not path.exists(sett['mods_path']):
+        raise FileNotFoundError("mods directory doesn't exists")
     p1 = Process(target=CurseForgeUpdater, args=(sett,))
     p1.start()
     p2 = Process(target=GithubUpdater, args=(sett,))
