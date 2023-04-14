@@ -4,12 +4,27 @@ mods_path = "mods/"
 
 [curseforge]
 key = "YOUR_API_KEY"
-mods_ids = [288988, 288989, 238770, 263420, 317780, 74735]
+mods_ids = [
+    74735, # ForgeEssentials
+#   235928, # ForgeEssentialsClient
+    238770, # GalaxySpace
+    288989, # NGTLib
+    288988, # RTM
+    263420, # XaerosMinimap
+    317780 # XaerosWorldMap
+]
 
 [github]
-use_prereleases = false
+use_prereleases = true
 repos = [
-    # Author/name, Should game version check be used?
-    ["HbmMods/Hbm-s-Nuclear-Tech-GIT", false],
-    ["MightyPirates/OpenComputers", true]
+    # Author/name,
+    # Filter: '+'/'-' - must be or not, 'r'/'a' - in releases or assets
+    ["LegacyModdingMC/UniMixins", ["a+all", "a-dev"]],
+    ["embeddedt/ArchaicFix", ["a-dev", "a-sources"]],
+    ["makamys/CoreTweaks", ["a+nomixin"]],
+    ["HbmMods/Hbm-s-Nuclear-Tech-GIT", []],
+    ["MightyPirates/OpenComputers", [
+        "r+1.7.10", "-aapi", "-adev", "-ajavadoc", "-asources"]],
+    ["zlainsama/SkinPort", []],
+#   ["makamys/Neodymium", ["a+nomixin"]]
 ]
