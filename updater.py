@@ -35,17 +35,23 @@ class Updater:
 
 class CurseForgeUpdater(Updater):
     def _get_mod_info(self, mod_id):
-        headers = {
-            'Accept': 'application/json',
-            'x-api-key': self.settings['curseforge']['key']
-        }
         params = {'gameVersion': self.settings['game_ver'], 'pageSize': 1}
         req = get(f'https://api.curseforge.com/v1/mods/{mod_id}/files',
-                  headers=headers, params=params)
+                  headers=self.HEADERS, params=params)
         return req.json()['data'][0]
+
+    def _url_if_no_cdn(self, mod_id, file_id):
+        req = get(f'https://api.curseforge.com/v1/mods/{mod_id}',
+                  headers=self.HEADERS)
+        website = req.json()['data']['links']['websiteUrl']
+        return f"{website}/download/{file_id}/file"
 
     def __init__(self, settings):
         super().__init__(settings)
+        self.HEADERS = {
+            'Accept': 'application/json',
+            'x-api-key': self.settings['curseforge']['key']
+        }
         downloads = set()
         for mod_id in self.settings['curseforge']['mods_ids']:
             file_info = self._get_mod_info(mod_id)
@@ -56,7 +62,10 @@ class CurseForgeUpdater(Updater):
                     "*" + filetype, 'c', mod_id)[0])
                 if old_file:
                     remove(old_file[0])
-                downloads.add((file_info['downloadUrl'], filepath))
+                url = file_info['downloadUrl']
+                if not url:
+                    url = self._url_if_no_cdn(mod_id, file_info['id'])
+                downloads.add((url, filepath))
         if downloads:
             self.download(downloads)
 

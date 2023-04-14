@@ -4,13 +4,12 @@ mods_path = "mods/"
 
 [curseforge]
 key = "YOUR_API_KEY"
-mods_ids = [288988, 288989, 238770, 263420, 317780]
+mods_ids = [288988, 288989, 238770, 263420, 317780, 74735]
 
 [github]
 use_prereleases = false
 repos = [
     # Author/name, Should game version check be used?
     ["HbmMods/Hbm-s-Nuclear-Tech-GIT", false],
-    ["MightyPirates/OpenComputers", true],
-    ["Aizistral-Studios/Grimoire", false]
+    ["MightyPirates/OpenComputers", true]
 ]
