@@ -15,6 +15,7 @@ mods_ids = [
 ]
 
 [github]
+key = "YOUR_API_KEY"  # Optional
 use_prereleases = true
 repos = [
     # Author/name,

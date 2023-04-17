@@ -16,7 +16,7 @@ class Updater:
         self.downloads = set()
 
     def make_filepath(self, filename, tag, mod_id):
-        dot_pos = filename.rfind('.')
+        dot_pos = filename.rfind(".")
         name = filename[:dot_pos] + "-" + tag + str(mod_id)
         filepath = self.sett['mods_path'] + name + filename[dot_pos:]
         return filepath, filename[dot_pos:]
@@ -46,14 +46,14 @@ class Updater:
 class CurseForgeUpdater(Updater):
     def _get_mod_info(self, mod_id):
         params = {'gameVersion': self.sett['game_ver'], 'pageSize': 1}
-        req = get(f'https://api.curseforge.com/v1/mods/{mod_id}/files',
+        req = get(f"https://api.curseforge.com/v1/mods/{mod_id}/files",
                   headers=self.HEADERS, params=params)
         return req.json()['data'][0]
 
     def _make_url(self, mod_id, file_info):
         if file_info['downloadUrl']:
             return file_info['downloadUrl']
-        req = get(f'https://api.curseforge.com/v1/mods/{mod_id}',
+        req = get(f"https://api.curseforge.com/v1/mods/{mod_id}",
                   headers=self.HEADERS)
         website = req.json()['data']['links']['websiteUrl']
         return f"{website}/download/{file_info['id']}/file"
@@ -92,10 +92,23 @@ class GithubUpdater(Updater):
             return False
         return self._base_checker(rules, 'r', release['name'])
 
+    def _handle_assets(self, assets, rules, repo_i):
+        for asset in assets:
+            if self._base_checker(rules, 'a', asset['name']):
+                filepath, filetype = self.make_filepath(
+                    asset['name'], 'g', repo_i)
+                if not path.exists(filepath):
+                    self._remove_old_file(filetype, 'g', repo_i)
+                    self.download(asset['browser_download_url'], filepath)
+                break
+
     def __init__(self, settings):
         super().__init__(settings)
         repos = (i[0] for i in self.sett['github']['repos'])
         headers = {'Accept': "application/vnd.github+json"}
+        key = self.sett['github']['key']
+        if len(key) > 20:
+            headers['Authorization'] = "Bearer " + self.sett['github']['key']
         params = {'per_page': 10}
         for repo_i, repo in enumerate(repos):
             repo_info = get(f"https://api.github.com/repos/{repo}/releases",
@@ -106,15 +119,7 @@ class GithubUpdater(Updater):
             rules = self.sett['github']['repos'][repo_i][1]
             for release in repo_info:
                 if self._check_release(release, rules):
-                    for asset in release['assets']:
-                        if self._base_checker(rules, 'a', asset['name']):
-                            filepath, filetype = self.make_filepath(
-                                asset['name'], 'g', repo_i)
-                            if not path.exists(filepath):
-                                self._remove_old_file(filetype, 'g', repo_i)
-                                self.download(
-                                    asset['browser_download_url'], filepath)
-                            break
+                    self._handle_assets(release['assets'], rules, repo_i)
                     break
         self.wait_downloads()
 
