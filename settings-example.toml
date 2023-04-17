@@ -20,10 +20,14 @@ use_prereleases = true
 repos = [
     # Author/name,
     # Filter: '+'/'-' - must be or not, 'r'/'a' - in releases or assets
+    # Subfolder: /subfolder_name
     ["LegacyModdingMC/UniMixins", ["a+all", "a-dev"]],
     ["embeddedt/ArchaicFix", ["a-dev", "a-sources"]],
+    ["GTNewHorizons/CodeChickenCore", ["a-dev", "a-sources"]],
+    ["GTNewHorizons/CodeChickenLib", ["a-dev", "a-sources", "/1.7.10"]],
     ["makamys/CoreTweaks", ["a+nomixin"]],
     ["HbmMods/Hbm-s-Nuclear-Tech-GIT", []],
+    ["GTNewHorizons/NotEnoughItems", ["a-dev", "a-sources"]],
     ["MightyPirates/OpenComputers", [
         "r+1.7.10", "-aapi", "-adev", "-ajavadoc", "-asources"]],
     ["zlainsama/SkinPort", []],

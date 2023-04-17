@@ -21,8 +21,9 @@ class Updater:
         filepath = self.sett['mods_path'] + name + filename[dot_pos:]
         return filepath, filename[dot_pos:]
 
-    def _remove_old_file(self, filetype, tag, mod_id):
-        old_file = glob(self.make_filepath("*" + filetype, tag, mod_id)[0])
+    def _remove_old_file(self, filetype, tag, mod_id, sub_folder=""):
+        old_file = glob(self.make_filepath(
+            sub_folder + "*" + filetype, tag, mod_id)[0])
         if old_file:
             remove(old_file[0])
 
@@ -76,6 +77,14 @@ class CurseForgeUpdater(Updater):
 
 
 class GithubUpdater(Updater):
+    def _prepare_req(self):
+        headers = {'Accept': "application/vnd.github+json"}
+        key = self.sett['github']['key']
+        if len(key) > 20:
+            headers['Authorization'] = "Bearer " + self.sett['github']['key']
+        params = {'per_page': 10}
+        return headers, params
+
     @staticmethod
     def _base_checker(rules, rule_tag, check_obj):
         for rule in filter(lambda i: i[0] == rule_tag, rules):
@@ -92,24 +101,28 @@ class GithubUpdater(Updater):
             return False
         return self._base_checker(rules, 'r', release['name'])
 
+    @staticmethod
+    def _get_sub_folder(rules):
+        for i in rules:
+            if i[0] == '/':
+                return i[1:] + "/"
+        return ""
+
     def _handle_assets(self, assets, rules, repo_i):
         for asset in assets:
             if self._base_checker(rules, 'a', asset['name']):
+                sub_f = self._get_sub_folder(rules)
                 filepath, filetype = self.make_filepath(
-                    asset['name'], 'g', repo_i)
+                    sub_f + asset['name'], 'g', repo_i)
                 if not path.exists(filepath):
-                    self._remove_old_file(filetype, 'g', repo_i)
+                    self._remove_old_file(filetype, 'g', repo_i, sub_f)
                     self.download(asset['browser_download_url'], filepath)
                 break
 
     def __init__(self, settings):
         super().__init__(settings)
         repos = (i[0] for i in self.sett['github']['repos'])
-        headers = {'Accept': "application/vnd.github+json"}
-        key = self.sett['github']['key']
-        if len(key) > 20:
-            headers['Authorization'] = "Bearer " + self.sett['github']['key']
-        params = {'per_page': 10}
+        headers, params = self._prepare_req()
         for repo_i, repo in enumerate(repos):
             repo_info = get(f"https://api.github.com/repos/{repo}/releases",
                             headers=headers, params=params).json()
