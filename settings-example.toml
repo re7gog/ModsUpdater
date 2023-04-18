@@ -5,7 +5,6 @@ mods_path = "mods/"
 [curseforge]
 key = "YOUR_API_KEY"
 mods_ids = [
-    74735, # ForgeEssentials
 #   235928, # ForgeEssentialsClient
     238770, # GalaxySpace
     288989, # NGTLib

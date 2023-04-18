@@ -51,14 +51,6 @@ class CurseForgeUpdater(Updater):
                   headers=self.HEADERS, params=params)
         return req.json()['data'][0]
 
-    def _make_url(self, mod_id, file_info):
-        if file_info['downloadUrl']:
-            return file_info['downloadUrl']
-        req = get(f"https://api.curseforge.com/v1/mods/{mod_id}",
-                  headers=self.HEADERS)
-        website = req.json()['data']['links']['websiteUrl']
-        return f"{website}/download/{file_info['id']}/file"
-
     def __init__(self, settings):
         super().__init__(settings)
         self.HEADERS = {
@@ -71,7 +63,10 @@ class CurseForgeUpdater(Updater):
                 file_info['fileName'], 'c', mod_id)
             if not path.exists(filepath):
                 self._remove_old_file(filetype, 'c', mod_id)
-                url = self._make_url(mod_id, file_info)
+                url = file_info['downloadUrl']
+                if not url:
+                    # CurseForge blocked download, remove it from config
+                    continue
                 self.download(url, filepath)
         self.wait_downloads()
 
