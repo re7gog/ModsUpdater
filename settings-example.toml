@@ -2,10 +2,15 @@
 game_ver = "1.7.10"
 mods_path = "mods/"
 
+jenkins = [
+    # Site, job, filter: '+'/'-' - must be or not
+#   ["ci.forgeessentials.com", "FE-1.7.10", ["+client"]],
+    ["ci.forgeessentials.com", "FE-1.7.10", ["+server"]]
+]
+
 [curseforge]
 key = "YOUR_API_KEY"
 mods_ids = [
-#   235928, # ForgeEssentialsClient
     238770, # GalaxySpace
     288989, # NGTLib
     288988, # RTM

@@ -21,7 +21,7 @@ class Updater:
         filepath = self.sett['mods_path'] + name + filename[dot_pos:]
         return filepath, filename[dot_pos:]
 
-    def _remove_old_file(self, filetype, tag, mod_id, sub_folder=""):
+    def remove_old_file(self, filetype, tag, mod_id, sub_folder=""):
         old_file = glob(self.make_filepath(
             sub_folder + "*" + filetype, tag, mod_id)[0])
         if old_file:
@@ -62,7 +62,7 @@ class CurseForgeUpdater(Updater):
             filepath, filetype = self.make_filepath(
                 file_info['fileName'], 'c', mod_id)
             if not path.exists(filepath):
-                self._remove_old_file(filetype, 'c', mod_id)
+                self.remove_old_file(filetype, 'c', mod_id)
                 url = file_info['downloadUrl']
                 if not url:
                     # CurseForge blocked download, remove it from config
@@ -110,7 +110,7 @@ class GithubUpdater(Updater):
                 filepath, filetype = self.make_filepath(
                     sub_f + asset['name'], 'g', repo_i)
                 if not path.exists(filepath):
-                    self._remove_old_file(filetype, 'g', repo_i, sub_f)
+                    self.remove_old_file(filetype, 'g', repo_i, sub_f)
                     self.download(asset['browser_download_url'], filepath)
                 break
 
@@ -132,12 +132,45 @@ class GithubUpdater(Updater):
         self.wait_downloads()
 
 
+class JenkinsUpdater(Updater):
+    @staticmethod
+    def _get_files_list(site, job):
+        url = f"https://{site}/job/{job}/lastStableBuild/api/json" \
+              f"?tree=artifacts%5BrelativePath%5D"
+        artifacts = get(url).json()['artifacts']
+        return map(lambda i: i['relativePath'], artifacts)
+
+    @staticmethod
+    def _checker(rules, check_obj):
+        for rule in rules:
+            must_be = rule[0] == '+'
+            word_there = rule[1:] in check_obj
+            if word_there != must_be:
+                return False
+        return True
+
+    def __init__(self, settings):
+        super().__init__(settings)
+        for j_i, (site, job, rules) in enumerate(self.sett['jenkins']):
+            for rel_file in self._get_files_list(site, job):
+                if self._checker(rules, rel_file):
+                    filename = rel_file[rel_file.rfind("/") + 1:]
+                    filepath, filetype = self.make_filepath(filename, 'j', j_i)
+                    if not path.exists(filepath):
+                        self.remove_old_file(filetype, 'j', j_i)
+                        dwnld_url = f"https://{site}/job/{job}/" \
+                                    f"lastStableBuild/artifact/{rel_file}"
+                        self.download(dwnld_url, filepath)
+                    break
+        self.wait_downloads()
+
+
 if __name__ == '__main__':
     with open("settings.toml") as sett_file:
         sett = tomllib.loads(sett_file.read())
     if not path.exists(sett['mods_path']):
         raise FileNotFoundError("mods directory doesn't exists")
-    modules = CurseForgeUpdater, GithubUpdater
+    modules = CurseForgeUpdater, GithubUpdater, JenkinsUpdater
     procs = (Process(target=m, args=(sett,)) for m in modules)
     for p in procs:
         p.start()
