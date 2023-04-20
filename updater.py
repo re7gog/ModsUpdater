@@ -51,6 +51,15 @@ class CurseForgeUpdater(Updater):
                   headers=self.HEADERS, params=params)
         return req.json()['data'][0]
 
+    def _make_url(self, file_info):
+        if file_info['downloadUrl']:
+            return file_info['downloadUrl']
+        # Hack
+        f_id = str(file_info['id'])
+        res = f"https://edge.forgecdn.net/files/" \
+              f"{f_id[:-3]}/{f_id[-3:]}/{file_info['fileName']}"
+        return res
+
     def __init__(self, settings):
         super().__init__(settings)
         self.HEADERS = {
@@ -63,10 +72,7 @@ class CurseForgeUpdater(Updater):
                 file_info['fileName'], 'c', mod_id)
             if not path.exists(filepath):
                 self.remove_old_file(filetype, 'c', mod_id)
-                url = file_info['downloadUrl']
-                if not url:
-                    # CurseForge blocked download, remove it from config
-                    continue
+                url = self._make_url(file_info)
                 self.download(url, filepath)
         self.wait_downloads()
 
@@ -103,14 +109,14 @@ class GithubUpdater(Updater):
                 return i[1:] + "/"
         return ""
 
-    def _handle_assets(self, assets, rules, repo_i):
+    def _handle_assets(self, assets, rules, repo_id):
         for asset in assets:
             if self._base_checker(rules, 'a', asset['name']):
                 sub_f = self._get_sub_folder(rules)
                 filepath, filetype = self.make_filepath(
-                    sub_f + asset['name'], 'g', repo_i)
+                    sub_f + asset['name'], 'g', repo_id)
                 if not path.exists(filepath):
-                    self.remove_old_file(filetype, 'g', repo_i, sub_f)
+                    self.remove_old_file(filetype, 'g', repo_id, sub_f)
                     self.download(asset['browser_download_url'], filepath)
                 break
 
@@ -127,40 +133,8 @@ class GithubUpdater(Updater):
             rules = self.sett['github']['repos'][repo_i][1]
             for release in repo_info:
                 if self._check_release(release, rules):
-                    self._handle_assets(release['assets'], rules, repo_i)
-                    break
-        self.wait_downloads()
-
-
-class JenkinsUpdater(Updater):
-    @staticmethod
-    def _get_files_list(site, job):
-        url = f"https://{site}/job/{job}/lastStableBuild/api/json" \
-              f"?tree=artifacts%5BrelativePath%5D"
-        artifacts = get(url).json()['artifacts']
-        return map(lambda i: i['relativePath'], artifacts)
-
-    @staticmethod
-    def _checker(rules, check_obj):
-        for rule in rules:
-            must_be = rule[0] == '+'
-            word_there = rule[1:] in check_obj
-            if word_there != must_be:
-                return False
-        return True
-
-    def __init__(self, settings):
-        super().__init__(settings)
-        for j_i, (site, job, rules) in enumerate(self.sett['jenkins']):
-            for rel_file in self._get_files_list(site, job):
-                if self._checker(rules, rel_file):
-                    filename = rel_file[rel_file.rfind("/") + 1:]
-                    filepath, filetype = self.make_filepath(filename, 'j', j_i)
-                    if not path.exists(filepath):
-                        self.remove_old_file(filetype, 'j', j_i)
-                        dwnld_url = f"https://{site}/job/{job}/" \
-                                    f"lastStableBuild/artifact/{rel_file}"
-                        self.download(dwnld_url, filepath)
+                    repo_id = repo[repo.rfind('/') + 1:]
+                    self._handle_assets(release['assets'], rules, repo_id)
                     break
         self.wait_downloads()
 
@@ -170,7 +144,7 @@ if __name__ == '__main__':
         sett = tomllib.loads(sett_file.read())
     if not path.exists(sett['mods_path']):
         raise FileNotFoundError("mods directory doesn't exists")
-    modules = CurseForgeUpdater, GithubUpdater, JenkinsUpdater
+    modules = CurseForgeUpdater, GithubUpdater
     procs = (Process(target=m, args=(sett,)) for m in modules)
     for p in procs:
         p.start()

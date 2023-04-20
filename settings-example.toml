@@ -2,15 +2,11 @@
 game_ver = "1.7.10"
 mods_path = "mods/"
 
-jenkins = [
-    # Site, job, filter: '+'/'-' - must be or not
-#   ["ci.forgeessentials.com", "FE-1.7.10", ["+client"]],
-    ["ci.forgeessentials.com", "FE-1.7.10", ["+server"]]
-]
-
 [curseforge]
 key = "YOUR_API_KEY"
 mods_ids = [
+#   235928, # ForgeEssentialsClient
+    74735, # ForgeEssentials
     238770, # GalaxySpace
     288989, # NGTLib
     288988, # RTM
@@ -31,9 +27,9 @@ repos = [
     ["GTNewHorizons/CodeChickenLib", ["a-dev", "a-sources", "/1.7.10"]],
     ["makamys/CoreTweaks", ["a+nomixin"]],
     ["HbmMods/Hbm-s-Nuclear-Tech-GIT", []],
+#   ["makamys/Neodymium", ["a+nomixin"]],
     ["GTNewHorizons/NotEnoughItems", ["a-dev", "a-sources"]],
     ["MightyPirates/OpenComputers", [
         "r+1.7.10", "-aapi", "-adev", "-ajavadoc", "-asources"]],
-    ["zlainsama/SkinPort", []],
-#   ["makamys/Neodymium", ["a+nomixin"]]
+    ["zlainsama/SkinPort", []]
 ]
