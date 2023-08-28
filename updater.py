@@ -1,6 +1,6 @@
 from glob import glob
 from multiprocessing import Process
-from os import path, remove
+from os import remove, path, makedirs
 
 from requests import get
 
@@ -30,6 +30,9 @@ class Updater:
     @staticmethod
     def _downloader(url, filename):
         file_stream = get(url, stream=True)
+        dirs = filename[:filename.rfind("/")]
+        if not path.exists(dirs):
+            makedirs(dirs)
         with open(filename, 'wb+') as file:
             for chunk in file_stream.iter_content(1024):
                 file.write(chunk)
@@ -51,7 +54,8 @@ class CurseForgeUpdater(Updater):
                   headers=self.HEADERS, params=params)
         return req.json()['data'][0]
 
-    def _make_url(self, file_info):
+    @staticmethod
+    def _make_url(file_info):
         if file_info['downloadUrl']:
             return file_info['downloadUrl']
         # Hack

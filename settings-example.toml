@@ -1,8 +1,10 @@
 # Don't forget to rename it to settings.toml!
+game_ver = "1.7.10"
+mods_path = "../mods/"
+
+[curseforge]
 key = "YOUR_API_KEY"
 mods_ids = [
-    235928, # ForgeEssentialsClient
-#   74735, # ForgeEssentials
     238770, # GalaxySpace
     288989, # NGTLib
     288988, # RTM
@@ -18,14 +20,14 @@ repos = [
     # Filter: '+'/'-' - must be or not, 'r'/'a' - in releases or assets
     # Subfolder: /subfolder_name
     ["LegacyModdingMC/UniMixins", ["a+all", "a-dev"]],
-    ["embeddedt/ArchaicFix", ["a-dev", "a-sources"]],
     ["GTNewHorizons/CodeChickenCore", ["a-dev", "a-sources"]],
     ["GTNewHorizons/CodeChickenLib", ["a-dev", "a-sources", "/1.7.10"]],
+    ["KAMKEEL/CustomNPC-Plus", ["a+nomixin"]],
     ["HbmMods/Hbm-s-Nuclear-Tech-GIT", []],
     ["GTNewHorizons/inventory-tweaks", ["a-api", "a-dev", "a-sources"]],
+    ["CrucibleMC/NecroTempus", ["a-api", "a-dev", "a-sources"]],
     ["makamys/Neodymium", ["a+nomixin"]],
     ["GTNewHorizons/NEI-Integration", ["a-dev", "a-sources"]],
     ["GTNewHorizons/NotEnoughItems", ["a-dev", "a-sources"]],
-    ["MightyPirates/OpenComputers", [
-        "r+1.7.10", "a-api", "a-dev", "a-javadoc", "a-sources"]]
+    ["MightyPirates/OpenComputers", ["r+1.7.10", "a+universal"]]
 ]
