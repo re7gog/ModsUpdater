@@ -1,13 +1,28 @@
+import ssl
+import tomllib
 from glob import glob
 from multiprocessing import Process
 from os import remove, path, makedirs
 
-from requests import get
+import requests
+from requests.adapters import HTTPAdapter
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
+
+class LocalSSLContext(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        context = ssl.create_default_context()
+        context.load_default_certs()
+        kwargs['ssl_context'] = context
+        return super(LocalSSLContext, self).init_poolmanager(*args, **kwargs)
+
+
+ssl_context = LocalSSLContext()
+
+
+def sys_certs_get(*args, **kwargs):
+    session = requests.Session()
+    session.mount('https://', ssl_context)
+    return session.get(*args, **kwargs)
 
 
 class Updater:
@@ -29,7 +44,7 @@ class Updater:
 
     @staticmethod
     def _downloader(url, filename):
-        file_stream = get(url, stream=True)
+        file_stream = sys_certs_get(url, stream=True)
         dirs = filename[:filename.rfind("/")]
         if not path.exists(dirs):
             makedirs(dirs)
@@ -50,8 +65,9 @@ class Updater:
 class CurseForgeUpdater(Updater):
     def _get_mod_info(self, mod_id):
         params = {'gameVersion': self.sett['game_ver'], 'pageSize': 1}
-        req = get(f"https://api.curseforge.com/v1/mods/{mod_id}/files",
-                  headers=self.HEADERS, params=params)
+        req = sys_certs_get(
+            f"https://api.curseforge.com/v1/mods/{mod_id}/files",
+            headers=self.HEADERS, params=params)
         return req.json()['data'][0]
 
     @staticmethod
@@ -129,8 +145,9 @@ class GithubUpdater(Updater):
         repos = (i[0] for i in self.sett['github']['repos'])
         headers, params = self._prepare_req()
         for repo_i, repo in enumerate(repos):
-            repo_info = get(f"https://api.github.com/repos/{repo}/releases",
-                            headers=headers, params=params).json()
+            repo_info = sys_certs_get(
+                f"https://api.github.com/repos/{repo}/releases",
+                headers=headers, params=params).json()
             if 'message' in repo_info:
                 print(repo_info['message'])
                 return
