@@ -51,6 +51,7 @@ class Updater:
         with open(filename, 'wb+') as file:
             for chunk in file_stream.iter_content(1024):
                 file.write(chunk)
+        print("Завершено скачивание  " + filename, flush=True)
 
     def download(self, *args):
         proc = Process(target=self._downloader, args=args)
@@ -86,6 +87,7 @@ class CurseForgeUpdater(Updater):
             'Accept': 'application/json',
             'x-api-key': self.sett['curseforge']['key']
         }
+        mod_list = []
         for mod_id in self.sett['curseforge']['mods_ids']:
             file_info = self._get_mod_info(mod_id)
             filepath, filetype = self.make_filepath(
@@ -93,7 +95,10 @@ class CurseForgeUpdater(Updater):
             if not path.exists(filepath):
                 self.remove_old_file(filetype, 'c', mod_id)
                 url = self._make_url(file_info)
-                self.download(url, filepath)
+                mod_list.append((url, filepath, file_info['fileName']))
+        print(f"Список обновлений с CurseForge (количество: {len(mod_list)}): {", ".join((i[2] for i in mod_list))}", flush=True)
+        for mod in mod_list:
+            self.download(mod[0], mod[1])
         self.wait_downloads()
 
 
@@ -137,13 +142,14 @@ class GithubUpdater(Updater):
                     sub_f + asset['name'], 'g', repo_id)
                 if not path.exists(filepath):
                     self.remove_old_file(filetype, 'g', repo_id, sub_f)
-                    self.download(asset['browser_download_url'], filepath)
-                break
+                    return asset['browser_download_url'], filepath, asset['name']
+                return
 
     def __init__(self, settings):
         super().__init__(settings)
         repos = (i[0] for i in self.sett['github']['repos'])
         headers, params = self._prepare_req()
+        mods_list = []
         for repo_i, repo in enumerate(repos):
             repo_info = sys_certs_get(
                 f"https://api.github.com/repos/{repo}/releases",
@@ -155,16 +161,23 @@ class GithubUpdater(Updater):
             for release in repo_info:
                 if self._check_release(release, rules):
                     repo_id = repo[repo.rfind('/') + 1:]
-                    self._handle_assets(release['assets'], rules, repo_id)
+                    res = self._handle_assets(release['assets'], rules, repo_id)
+                    if res:
+                        mods_list.append(res)
                     break
+        print(f"Список обновлений с Github (количество: {len(mods_list)}): {", ".join((i[2] for i in mods_list))}", flush=True)
+        for mod in mods_list:
+            self.download(mod[0], mod[1])
         self.wait_downloads()
 
 
 if __name__ == '__main__':
+    if not path.exists("settings.toml"):
+        raise FileNotFoundError("Файл настроек settings.toml отсутствует")
     with open("settings.toml") as sett_file:
         sett = tomllib.loads(sett_file.read())
     if not path.exists(sett['mods_path']):
-        raise FileNotFoundError("mods directory doesn't exists")
+        raise FileNotFoundError("Не существует указанной в настройках директории для модов")
     modules = CurseForgeUpdater, GithubUpdater
     procs = (Process(target=m, args=(sett,)) for m in modules)
     for p in procs:
